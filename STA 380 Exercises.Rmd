@@ -165,11 +165,11 @@ legend("topright", c("Green","Non-Green"), pch=15,
        bty="n")
 ```
 
-Based on our analyses, the excel guru's projections are innacurate because he does not consider the confounding variable of building quality. To create a more accurate projection, he should consider green vs. non-green buildings in each class separately. It is impossible to make an accurate projection of rent revenue of a green vs non green building without knowing the quality of the building that is being built. Regardless, the spread among the green and non-green rent prices in their respective classes is much smaller than the spread in all of the buildings considered together. Therefore, it will probably take longer for the building to cover the 5 million extra dollars it would cost to have the building certified as green. 
+Based on our analyses, the excel guru's projections are inaccurate because he does not consider the confounding variable of building quality. To create a more accurate projection, he should consider green vs. non-green buildings in each class separately. It is impossible to make an accurate projection of rent revenue of a green vs non green building without knowing the quality of the building that is being built. Regardless, the spread among the green and non-green rent prices in their respective classes is much smaller than the spread in all of the buildings considered together. Therefore, it will probably take longer for the building to cover the 5 million extra dollars it would cost to have the building certified as green. 
 
 
 
-# Question 2
+# Excercise 2
 ```{r, echo=FALSE}
 ABIA = read.csv("ABIA.csv")
 ABIA[is.na(ABIA)] = 0
@@ -817,7 +817,7 @@ DTM.Tests=as.matrix(TfIdfMatrixTest)
 
 ## Principal component analysis was used to extract the most important features from the large data set without losing relevant data
 
-### Dimensionality Reduction
+### Dimensionality Reduction (Necessary for PCA)
 ```{r}
 #remove 0 entry columns
 DTM.trainr1=DTM.trainr[,which(colSums(DTM.trainr) != 0)] 
