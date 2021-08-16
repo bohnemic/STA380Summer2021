@@ -694,6 +694,11 @@ Clusters are split along how often they tweet about certain topics that are inhe
 
 # Exercise 5
 
+In the C50train directory, you have 50 articles from each of 50 different authors (one author per directory). Use this training data (and this data alone) to build the model. Then apply your model to predict the authorship of the articles in the C50test directory, which is about the same size as the training set. 
+
+The difficulty in this section lay in preprocessing the data, due to the number of txt files that were being used. First, the files were loaded in, and the files names were read in using readPlain(). Next, in order to make the text itself homogenous, adjustments were needed to be made to the text. Using the corpus function, the text was made to be all lowercase, and numbers, punctuation, white spaces, and stop words were removed from the text files. Next, sparse terms were also removed by using the removeSparseTerms function. This method was used on both the test and train sets. Once completed, in order to prepare the data sets for PCA, dimensionality reduction was necessary. This step removes the null columns and selects only the intersecting columns. Once this step had been completed, PCA could be run on the data set. PCA was used in order to determine the necessary amount of components tht could be sued to explain the majority of the data set. That information could then be used to run the three selected models, Naive Bayes, KNN, and Random Forest.
+
+
 ```{r, echo = FALSE,warning=FALSE,include=FALSE}
 #loading Libraries
 library(tm) 
@@ -716,15 +721,13 @@ reader = function(fname){
 
 ```
 
-## Reading in the Folders
-```{r}
+```{r include=FALSE}
 #Reading the folders
 c50train=Sys.glob('C:/Users/mbrohnet/Documents/School Work/UT Summer/STA 380/NEW EXAM/STA380-master/data/ReutersC50/C50train/*')
 
 ```
 
-## Create the training set and Clean File Names
-```{r}
+```{r include=FALSE}
 #Create training set
 authComb=NULL
 labels=NULL
@@ -750,8 +753,7 @@ names(comb) = sub('.txt', '', names(comb))
 
 ```
 
-## Pre-Processing training data by changing it to lower case, taking out numbers, taking out punctuation, taking out excess space, and taking out stop words
-```{r warning=FALSE}
+```{r warning=FALSE, include=FALSE}
 #Text mining corpus
 corpusTrain=Corpus(VectorSource(comb))
 
@@ -771,14 +773,12 @@ TfIdfMatrix = weightTfIdf(DTM.train)
 DTM.trainr=as.matrix(TfIdfMatrix) 
 ```
 
-## Read in Test Data
-```{r}
+```{r, include=FALSE}
 #Read in test data
 test=Sys.glob('C:/Users/mbrohnet/Documents/School Work/UT Summer/STA 380/NEW EXAM/STA380-master/data/ReutersC50/C50test/*')
 ```
 
-## Cleaning File Names
-```{r}
+```{r, include=FALSE}
 authComb1=NULL
 labels1=NULL
 for (name in test)
@@ -796,8 +796,7 @@ names(comb1) = sub('.txt', '', names(comb1))
 
 ``` 
 
-## Clean Test data in the same way the training data was cleaned 
-```{r warning = FALSE}
+```{r warning = FALSE, include=FALSE}
 corpusTest=Corpus(VectorSource(comb1))
 
 corpusTestCopy=corpusTest 
@@ -816,9 +815,7 @@ DTM.Tests=as.matrix(TfIdfMatrixTest)
 ```
 
 ## Principal component analysis was used to extract the most important features from the large data set without losing relevant data
-
-### Dimensionality Reduction (Necessary for PCA)
-```{r}
+```{r, include=FALSE}
 #remove 0 entry columns
 DTM.trainr1=DTM.trainr[,which(colSums(DTM.trainr) != 0)] 
 DTM.tests1=DTM.Tests[,which(colSums(DTM.Tests) != 0)]
