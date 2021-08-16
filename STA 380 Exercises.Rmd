@@ -5,14 +5,7 @@ date: "8/16/2021"
 output: pdf_document
 ---
 
-# Git Hub Link: [insert link]
-
----
-title: "STA 380 Take Home Exam"
-author: "Michael Bohnet"
-date: "7/31/2021"
-output: pdf_document
----
+# Git Hub Link: [https://github.com/bohnemic/STA380Summer2021/blob/main/STA%20380%20Exercises.Rmd]
 
 
 ```{r setup, include = FALSE}
@@ -283,6 +276,11 @@ ggplot(cty_mpg, aes(x=Month, y=Delay)) +
 ```
 
 # Exercise 3
+Given that we had 4 ETFs in each of our 3 portfolios, we weighted them by assigning an equal weight of 0.25 to each ETF. This way each of our portfolios totaled to have a weight of 1.00 as they should.
+
+As a note, due to the fluctuating nature of the stock market, our VaR values and Mean Profit or Loss are approximate and were recorded at the time the code chunk was run. What may have been our best portfolio at the time we conducted this analysis could change at some point in the future. 
+
+
 ## Portfolio 1
 ```{r Excercise 3 Portfolio 1, echo=FALSE, warning=FALSE}
 #STA380 Exercise #3 "Portfolio Modeling"
