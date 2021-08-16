@@ -1,0 +1,1011 @@
+---
+title: "STA 380 Part 2: Exercises"
+author: "Jared Hurwit, Michael Bohnet, Brent Hensley, Samuel LaPlatney"
+date: "8/16/2021"
+output: pdf_document
+---
+
+# Git Hub Link: [insert link]
+
+---
+title: "STA 380 Take Home Exam"
+author: "Michael Bohnet"
+date: "7/31/2021"
+output: pdf_document
+---
+
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Exercise 1
+
+We determined that the "on-site guru" is correct in his assumption that including buildings with less than 10% occupancy in our analysis would be ill-advised. So, we scrubbed the buildings where leasing rate is less than 10.
+```{r intro, echo=FALSE, message=FALSE, warning=FALSE}
+df = read.csv('greenbuildings.csv')
+summary(df)
+ulst <- lapply(df, unique)
+k <- lengths(ulst)
+df = data.frame(subset(df, leasing_rate>10))
+```
+
+The average rent for among those buildings with occupancy greater than 10% is 28.42. The green certified buildings in this set had an average rent of 30.03 while the non green buildings had an average rent of 28.44. The on site guru was accurate in his calculation of median rent for the green and non-green buildings at 27.60 and ~$25 per square foot, respectively. The boxplots below were created to to visualize the spread of the "Rent" prices in the dataset. The boxplots show that there are a significant number of outliers among both those buildings that are Green certified and those that are not green certified. So, the subsequent analyses of "Rent" used the median values of the sublasses.
+```{r boxplots, echo=FALSE, message=FALSE, warning=FALSE}
+green = data.frame(subset(df, green_rating==1))
+non_green = data.frame(subset(df, green_rating==0))
+boxplot(green$Rent, non_green$Rent,
+        main = "Green Rent vs. Non-Green Rent", 
+        ylab = "Rent / Sq. Ft. (Dollars)",names=c('Green','Non-Green'))
+library(tidyverse)
+```
+Our guru makes an unwise assumption here that the inflated Green rent is due to the fact that those buildings are green certified. He assumes that a building being green certified is the reason that these buildings have a higher rent on average. However, there are many other factors in the data that could be causing green properties to have a higher rent. So, we created a correlation matrix to determine if any of there variables were significantly correlated with rent. This, however, did not provide much useful information because of the categorical nature of an important variable (Class).
+
+```{r Correlation Matrix, echo=FALSE, message=FALSE, warning=FALSE}
+library(corrplot)
+M<-cor(df)
+corrplot(M, method='circle') 
+```
+
+One variable that sticks out in this regard is "Class" which is a measure of the quality of the building regardless of whether or not it is green certified.
+
+So, we zeroed in on the different classes of buildings and the relative number of green and nongreen buildings in those classes. We found that:
+
+* 80% of Green buildings are Class A.
+* 19% of Green buildings are class B.
+* 1% or 7 out of 684 green buildings in the datset are Class C.
+
+* 37% of Non Green buildings are Class A.
+* 48% of Non Green buildings are Class B.
+* 15% of Non Green buildings are Class C.
+
+```{r EDA1, message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+sum(df$class_a)
+nrow(green)
+sum(green$class_a)
+sum(green$class_a) / nrow(green)
+sum(green$class_b) 
+sum(green$class_b) / nrow(green)
+sum(non_green$class_a) / nrow(non_green)
+sum(non_green$class_b) / nrow(non_green)
+sum(non_green$class_a)
+sum(non_green$class_b) 
+classC = data.frame(subset(df, class_a==0 & class_b ==0))
+summary(classC)
+greenclassC = data.frame(subset(classC, green_rating==1))
+summary(greenclassC)
+nongreenclassC = data.frame(subset(classC, green_rating==0))
+summary(nongreenclassC)
+
+nrow(greenclassC)
+nrow(nongreenclassC) / nrow(non_green)
+nrow(nongreenclassC)
+```
+
+
+The graphs below illustrate the statistics previously mentioned. Each square represents about 5 buildings. It is clear that the overwhelming majority of Green buildings are considered Class A. Whereas, Class B is the preemiment budiling quality among the Non-green buildings. So, how does this affect the average and median rent among the Green and Non-Green subsets of buildings?
+
+```{r Waffles, echo=FALSE}
+library(waffle)
+greens <- c(`Class A:`=546, `Class B`=131,
+              `Class C`=7)
+waffle(greens/5, rows=10, size=0.6, 
+       colors=c("#44D2AC", "#E48B8B", "#B67093"), 
+       title="Green Buildings Class Distribution", 
+       xlab="1 square =  5 Buildings")
+
+nongreens <- c(`Class A:`=2589, `Class B`=3391,
+              `Class C`=1015)
+waffle(nongreens/5, rows=30, size=0.6, 
+       colors=c("#44D2AC", "#E48B8B", "#B67093"), 
+       title="Non-Green Buildings Class Distribution", 
+       xlab="1 square =  5 Buildings")
+
+```
+
+Class A 
+
+* Median rent among class A buildings is $28.20
+* Median rent among green buildings that are class a is $28.44
+* Median rent among non green buildings that are class a is $28.22
+  
+```{r Class A, message=FALSE, warning=FALSE, include=FALSE}
+classA = data.frame(subset(df, class_a==1))
+median(classA$Rent) 
+greenclassA = data.frame(subset(classA, green_rating==1)) 
+median(greenclassA$Rent)
+nongreenclassA = data.frame(subset(classA, green_rating==0))
+median(nongreenclassA$Rent) 
+```
+
+
+Class B
+
+* median rent among Class B buildings is $24
+* median rent among green Class B buildings is $25.20
+* median rent among non green class b buildings is $24
+
+```{r Class B, warning=FALSE, include=FALSE}
+classB = data.frame(subset(df, class_b==1))
+median(classB$Rent)
+greenclassB = data.frame(subset(classB, green_rating==1))
+median(greenclassB$Rent)
+nongreenclassB = data.frame(subset(classB, green_rating==0))
+median(nongreenclassB$Rent)
+```
+
+
+Class C
+
+* median rent among Class B buildings is $22.11
+* average rent among green Class B buildings is $28.17 (only 7 buildings, so took average)
+* median rent among non green class b buildings is $22.11
+```{r Class C, warning=FALSE, include=FALSE}
+classC = data.frame(subset(df, class_a==0 & class_b ==0))
+median(classC$Rent)
+greenclassC = data.frame(subset(classC, green_rating==1))
+mean(greenclassC$Rent)
+nongreenclassC = data.frame(subset(classC, green_rating==0))
+median(nongreenclassC$Rent)
+```
+```{r medians, include=FALSE}
+median(green$Rent)
+median(non_green$Rent)
+```
+
+Rent Comparison Chart
+
+This chart shows that renters are not necessarily paying a premium for "Green" Certified building. They are actually paying a premium on being in a higher quality building. In aggregate, green buildings appear to come at a premium, but this is because of the higher percentage of Green buildings that are class A compared to the lower percentage of Non-Green buildings that are class A. There are also a significant number of non-green buildings that are Class C while only 7 green buildings are class C. I did not include the class C comparison because the number of Green buildings that are class C is not statistically significant. 
+
+```{r Big chart, echo=TRUE, message=FALSE, warning=FALSE}
+library(reshape)
+library(ggplot2)
+barplot(matrix(c(27.6,25.03,28.44,28.2,25.20,24),nr=2), beside=T, 
+        col=c("aquamarine3","coral"), 
+        names.arg=c('Overall','Class A','Class B'),
+        main = 'Rent Comparison',
+        ylab = 'Rent / SqFt (dollars)',
+        ylim = c(10, 30),
+        xpd = FALSE)
+legend("topright", c("Green","Non-Green"), pch=15, 
+       col=c("aquamarine3","coral"), 
+       bty="n")
+```
+
+Based on our analyses, the excel guru's projections are innacurate because he does not consider the confounding variable of building quality. To create a more accurate projection, he should consider green vs. non-green buildings in each class separately. It is impossible to make an accurate projection of rent revenue of a green vs non green building without knowing the quality of the building that is being built. Regardless, the spread among the green and non-green rent prices in their respective classes is much smaller than the spread in all of the buildings considered together. Therefore, it will probably take longer for the building to cover the 5 million extra dollars it would cost to have the building certified as green. 
+
+
+
+# Question 2
+```{r, echo=FALSE}
+ABIA = read.csv("ABIA.csv")
+ABIA[is.na(ABIA)] = 0
+```
+
+```{r 2, echo=FALSE}
+library(ggplot2)
+theme_set(theme_classic())
+
+# Plot
+g <- ggplot(ABIA, aes(DepDelay))
+g + geom_density(aes(fill=factor(Year)), alpha=0.8) + scale_x_continuous(limits = c(0, 120)) + labs(title="Density plot", 
+         subtitle="Delays of Departing Flights",
+         caption="Source: DepDelay",
+         x="Delay in Minutes",
+         fill="Year")
+```
+
+
+```{r 3, echo=FALSE}
+library(ggplot2)
+theme_set(theme_bw())
+
+airline_delay <- aggregate(ABIA$DepDelay, by=list(ABIA$UniqueCarrier), FUN=mean)  # aggregate
+colnames(airline_delay) <- c("Airline", "Delay")  # change column names
+airline_delay <- airline_delay[order(airline_delay$Delay), ]  # sort
+airline_delay$Airline <- factor(airline_delay$Airline, levels = airline_delay$Airline)  # to retain the order in plot.
+head(airline_delay, 4)
+
+# Draw plot
+ggplot(airline_delay, aes(x=Airline, y=Delay)) + 
+  geom_bar(stat="identity", width=.5, fill="tomato3") + 
+  labs(title="Ordered Bar Chart", 
+       subtitle="Airline vs Average Departure Delays", 
+       caption="source: ABIA") + 
+  theme(axis.text.x = element_text(angle=65, vjust=0.8))
+```
+
+```{r 4, echo = FALSE}
+library(ggplot2)
+theme_set(theme_bw())
+
+airline_delay <- aggregate(ABIA$ArrDelay, by=list(ABIA$UniqueCarrier), FUN=mean)  # aggregate
+colnames(airline_delay) <- c("Airline", "Delay")  # change column names
+airline_delay <- airline_delay[order(airline_delay$Delay), ]  # sort
+airline_delay$Airline <- factor(airline_delay$Airline, levels = airline_delay$Airline)  # to retain the order in plot.
+head(airline_delay, 4)
+
+# Draw plot
+ggplot(airline_delay, aes(x=Airline, y=Delay)) + 
+  geom_bar(stat="identity", width=.5, fill="springgreen4") + 
+  labs(title="Ordered Bar Chart", 
+       subtitle="Airline vs Average Arrival Delays", 
+       caption="source: ABIA") + 
+  theme(axis.text.x = element_text(angle=65, vjust=0.8))
+```
+
+```{r 6, echo = FALSE}
+theme_set(theme_bw())  # pre-set the bw theme.
+g <- ggplot(ABIA, aes(Month, DepDelay))
+g + geom_count(col="slateblue2", show.legend=F) + scale_x_continuous(breaks = seq(0, 12, by = 2)) +
+  labs(subtitle="Month vs Delay in Minutes", 
+       y="Minutes Delayed", 
+       x="Month", 
+       title="Counts Plot")
+```
+
+```{r 7, echo = FALSE}
+cty_mpg <- aggregate(ABIA$DepDelay, by=list(ABIA$DayOfWeek), FUN=mean)  # aggregate
+colnames(cty_mpg) <- c("DayofWeek", "Delay")  # change column names
+cty_mpg <- cty_mpg[order(cty_mpg$Delay), ]  # sort
+#cty_mpg$DayofWeek <- factor(cty_mpg$DayofWeek, levels = cty_mpg$DayofWeek)  # to retain the order in plot.
+head(cty_mpg, 4)
+
+ggplot(cty_mpg, aes(x=DayofWeek, y=Delay)) + 
+  geom_point(size=3) + 
+  scale_x_continuous(breaks = seq(0, 7, by = 1)) + geom_segment(aes(x=DayofWeek, 
+                   xend=DayofWeek, 
+                   y=0, 
+                   yend=Delay)) + 
+  labs(title="Lollipop Chart", 
+       subtitle="Delay by Day of Week (Monday to Sunday)", 
+       caption="source: ABIA", y= "Average Delay (Minutes)", x= "Day of Week") + 
+  theme(axis.text.x = element_text(angle=65, vjust=0.6))
+```
+
+```{r 8, echo = FALSE}
+cty_mpg <- aggregate(ABIA$DepDelay, by=list(ABIA$Month), FUN=mean)  # aggregate
+  colnames(cty_mpg) <- c("Month", "Delay")  # change column names
+cty_mpg <- cty_mpg[order(cty_mpg$Delay), ]  # sort
+#cty_mpg$Month <- factor(cty_mpg$DayofWeek, levels = cty_mpg$DayofWeek)  # to retain the order in plot.
+head(cty_mpg, 4)
+
+ggplot(cty_mpg, aes(x=Month, y=Delay)) + 
+  geom_point(size=3) + scale_x_continuous(breaks = seq(0, 12, by = 2)) + 
+  geom_segment(aes(x=Month, 
+                   xend=Month, 
+                   y=0, 
+                   yend=Delay)) + 
+  labs(title="Lollipop Chart", 
+       subtitle="Delay by Month", 
+       caption="source: ABIA", y= "Average Delay (Minutes") + 
+  theme(axis.text.x = element_text(angle=65, vjust=0.6))
+```
+
+# Exercise 3
+## Portfolio 1
+```{r Excercise 3 Portfolio 1, echo=FALSE, warning=FALSE}
+#STA380 Exercise #3 "Portfolio Modeling"
+
+library(mosaic)
+library(quantmod)
+library(foreach)
+
+
+
+#### Now use a bootstrap approach
+#### With more stocks
+
+mystocks = c("PHO", "FIW", "CGW", "PIO")
+myprices = getSymbols(mystocks, from = "2016-01-01", to = "2021-08-13") 
+
+
+#A chunk of code for adjusting all stocks
+#creates a new object adding 'a' to the end
+#For example, PHO becomes PHOa, etc
+for(ticker in mystocks) {
+  expr = paste0(ticker, "a = adjustOHLC(", ticker, ")")
+  eval(parse(text=expr))
+}
+
+head(PHOa)
+
+# Combine all the returns in a matrix
+all_returns = cbind(	ClCl(PHOa),
+                     ClCl(FIWa),
+                     ClCl(CGWa),
+                     ClCl(PIOa))
+                     
+                     
+head(all_returns)
+all_returns = as.matrix(na.omit(all_returns))
+
+# Compute the returns from the closing prices
+pairs(all_returns)
+
+# Sample a random return from the empirical joint distribution
+# This simulates a random day
+return.today = resample(all_returns, 1, orig.ids=FALSE)
+
+# Update the value of your holdings
+# Assumes an equal allocation to each asset
+total_wealth = 100000
+my_weights = c(0.25,0.25,0.25, 0.25)
+holdings = total_wealth*my_weights
+holdings = holdings*(1 + return.today)
+
+# Compute your new total wealth
+holdings
+total_wealth = sum(holdings)
+total_wealth
+
+# Now loop over two trading weeks
+# let's run the following block of code 5 or 6 times
+# to eyeball the variability in performance trajectories
+
+## begin block
+total_wealth = 100000
+weights = c(0.25, 0.25, 0.25, 0.25)
+holdings = weights * total_wealth
+n_days = 20  # capital T in the notes #DO I CHANGE THE 10 - 20 here????!!!
+wealthtracker = rep(0, n_days) # Set up a placeholder to track total wealth
+for(today in 1:n_days) {
+  return.today = resample(all_returns, 1, orig.ids=FALSE)  # sampling from R matrix in notes
+  holdings = holdings + holdings*return.today
+  total_wealth = sum(holdings)
+  wealthtracker[today] = total_wealth
+}
+total_wealth
+plot(wealthtracker, type='l')
+## end block
+
+# Now simulate many different possible futures
+# just repeating the above block thousands of times
+initial_wealth = 100000
+sim1 = foreach(i=1:5000, .combine='rbind') %do% {
+  total_wealth = initial_wealth
+  weights = c(0.25,0.25,0.25, 0.25)
+  holdings = weights * total_wealth
+  n_days = 20 # OR DO I CHANGE THE 10 - 20 here????!!! OR BOTH???
+  wealthtracker = rep(0, n_days)
+  for(today in 1:n_days) {
+    return.today = resample(all_returns, 1, orig.ids=FALSE)
+    holdings = holdings + holdings*return.today
+    total_wealth = sum(holdings)
+    wealthtracker[today] = total_wealth
+  }
+  wealthtracker
+}
+
+# each row is a simulated trajectory
+# each column is a data
+head(sim1)
+hist(sim1[,n_days], 25)
+
+# Profit/loss
+mean(sim1[,n_days])
+mean(sim1[,n_days] - initial_wealth)
+hist(sim1[,n_days]- initial_wealth, breaks=30)
+
+# 5% value at risk:
+quantile(sim1[,n_days]- initial_wealth, prob=0.05)
+```
+
+Portfolio 1 had a VaR at the 5% level equal to approximately -7514.39, and, as previously stated, this value is conventionally stated as a positive number so we shall record it as 7514.39. This consisted of the Invesco Water Resources ETF (PHO),  First Trust Water ETF (FIW), Invesco S&P Global Water Index ETF (CGW),  Invesco Global Water ETF (PIO). Essentially, this means that if this portfolio 1 has a one-day 5% VaR of approximately $7514.39, then there is a 0.05% probability that the portfolio will fall in value by more than $7514.39 over 24 hours of time if trading is not conducted. 
+
+## Portfolio 2
+```{r Excercise 3 Portfolio 2, echo=FALSE, warning=FALSE}
+mystocks = c("PHO", "SPY", "XLE", "XLV")
+myprices = getSymbols(mystocks, from = "2016-01-01", to = "2021-08-13") 
+
+
+#A chunk of code for adjusting all stocks
+#creates a new object adding 'a' to the end
+#For example, PHO becomes PHOa, etc
+for(ticker in mystocks) {
+  expr = paste0(ticker, "a = adjustOHLC(", ticker, ")")
+  eval(parse(text=expr))
+}
+
+head(PHOa)
+
+# Combine all the returns in a matrix
+all_returns = cbind(	ClCl(PHOa),
+                     ClCl(SPYa),
+                     ClCl(XLVa),
+                     ClCl(XLEa))
+          
+                     
+                     head(all_returns)
+                     all_returns = as.matrix(na.omit(all_returns))
+                     
+                     # Compute the returns from the closing prices
+                     pairs(all_returns)
+                     
+                     # Sample a random return from the empirical joint distribution
+                     # This simulates a random day
+                     return.today = resample(all_returns, 1, orig.ids=FALSE)
+                     
+                     # Update the value of your holdings
+                     # Assumes an equal allocation to each asset
+                     total_wealth = 100000
+                     my_weights = c(0.25,0.25,0.25, 0.25)
+                     holdings = total_wealth*my_weights
+                     holdings = holdings*(1 + return.today)
+                     
+                     # Compute your new total wealth
+                     holdings
+                     total_wealth = sum(holdings)
+                     total_wealth
+                     
+                     # Now loop over two trading weeks
+                     # let's run the following block of code 5 or 6 times
+                     # to eyeball the variability in performance trajectories
+                     
+                     ## begin block
+                     total_wealth = 100000
+                     weights = c(0.25,0.25,0.25, 0.25)
+                     holdings = weights * total_wealth
+                     n_days = 20  # capital T in the notes #DO I CHANGE THE 10 - 20 here????!!!
+                     wealthtracker = rep(0, n_days) # Set up a placeholder to track total wealth
+                     for(today in 1:n_days) {
+                       return.today = resample(all_returns, 1, orig.ids=FALSE)  # sampling from R matrix in notes
+                       holdings = holdings + holdings*return.today
+                       total_wealth = sum(holdings)
+                       wealthtracker[today] = total_wealth
+                     }
+                     total_wealth
+                     plot(wealthtracker, type='l')
+                     ## end block
+                     
+                     # Now simulate many different possible futures
+                     # just repeating the above block thousands of times
+                     initial_wealth = 100000
+                     sim1 = foreach(i=1:5000, .combine='rbind') %do% {
+                       total_wealth = initial_wealth
+                       weights = c(0.25,0.25,0.25, 0.25)
+                       holdings = weights * total_wealth
+                       n_days = 20 # OR DO I CHANGE THE 10 - 20 here????!!! OR BOTH???
+                       wealthtracker = rep(0, n_days)
+                       for(today in 1:n_days) {
+                         return.today = resample(all_returns, 1, orig.ids=FALSE)
+                         holdings = holdings + holdings*return.today
+                         total_wealth = sum(holdings)
+                         wealthtracker[today] = total_wealth
+                       }
+                       wealthtracker
+                     }
+                     
+                     # each row is a simulated trajectory
+                     # each column is a data
+                     head(sim1)
+                     hist(sim1[,n_days], 25)
+                     
+                     # Profit/loss
+                     mean(sim1[,n_days])
+                     mean(sim1[,n_days] - initial_wealth)
+                     hist(sim1[,n_days]- initial_wealth, breaks=30)
+                     
+                     # 5% value at risk:
+                     quantile(sim1[,n_days]- initial_wealth, prob=0.05)
+                     
+
+```
+We predicted the value at risk of 4 chosen ETFs consisting of the S&P 500 (SPY), Energy Select Sector SPDR Fund (XLE), Invesco Water Resources ETF (PHO), and Health Care Select Sector SPDR Fund (XLV). Using the bootstrap resampling to estimate the VaR, we found the VaR at the 5% level to be equal to approximately -8307.501. Conventionally, VaR is stated as a positive number so we shall record it as 8307.501. Essentially, this means that if this portfolio 2 has a one-day 5% VaR of approximately $8307.50, then there is a 0.05% probability that the portfolio will fall in value by more than $8307.50 over 24 hours of time if trading is not conducted. This is the largest value at risk among the three portfolios of stocks that we chose. Therefore, in practice, we would most likely not go ahead with this particular investment.
+
+
+## Portfolio 3
+```{r Excercise 3 Portfolio 3, echo=FALSE, warning=FALSE}
+
+
+#### Now use a bootstrap approach
+#### With more stocks
+
+mystocks = c("IYZ", "FIW", "IGN", "XTL")
+myprices = getSymbols(mystocks, from = "2016-01-01", to = "2021-08-13") 
+
+
+#A chunk of code for adjusting all stocks
+#creates a new object adding 'a' to the end
+#For example, PHO becomes PHOa, etc
+for(ticker in mystocks) {
+  expr = paste0(ticker, "a = adjustOHLC(", ticker, ")")
+  eval(parse(text=expr))
+}
+
+head(IYZa)
+
+# Combine all the returns in a matrix
+all_returns = cbind(	ClCl(IYZa),
+                     ClCl(FIWa),
+                     ClCl(IGNa),
+                     ClCl(XTLa))
+head(all_returns)
+all_returns = as.matrix(na.omit(all_returns))
+                     
+                     # Compute the returns from the closing prices
+                     pairs(all_returns)
+                     
+                     # Sample a random return from the empirical joint distribution
+                     # This simulates a random day
+                     return.today = resample(all_returns, 1, orig.ids=FALSE)
+                     
+                     # Update the value of your holdings
+                     # Assumes an equal allocation to each asset
+                     total_wealth = 100000
+                     my_weights = c(0.25,0.25,0.25, 0.25)
+                     holdings = total_wealth*my_weights
+                     holdings = holdings*(1 + return.today)
+                     
+                     # Compute your new total wealth
+                     holdings
+                     total_wealth = sum(holdings)
+                     total_wealth
+                     
+                     # Now loop over two trading weeks
+                     # let's run the following block of code 5 or 6 times
+                     # to eyeball the variability in performance trajectories
+                     
+                     ## begin block
+                     total_wealth = 100000
+                     weights = c(0.25,0.25,0.25, 0.25)
+                     holdings = weights * total_wealth
+                     n_days = 20  # capital T in the notes #DO I CHANGE THE 10 - 20 here????!!!
+                     wealthtracker = rep(0, n_days) # Set up a placeholder to track total wealth
+                     for(today in 1:n_days) {
+                       return.today = resample(all_returns, 1, orig.ids=FALSE)  # sampling from R matrix in notes
+                       holdings = holdings + holdings*return.today
+                       total_wealth = sum(holdings)
+                       wealthtracker[today] = total_wealth
+                     }
+                     total_wealth
+                     plot(wealthtracker, type='l')
+                     ## end block
+                     
+                     # Now simulate many different possible futures
+                     # just repeating the above block thousands of times
+                     initial_wealth = 100000
+                     sim1 = foreach(i=1:5000, .combine='rbind') %do% {
+                       total_wealth = initial_wealth
+                       weights = c(0.25,0.25,0.25, 0.25)
+                       holdings = weights * total_wealth
+                       n_days = 20 # OR DO I CHANGE THE 10 - 20 here????!!! OR BOTH???
+                       wealthtracker = rep(0, n_days)
+                       for(today in 1:n_days) {
+                         return.today = resample(all_returns, 1, orig.ids=FALSE)
+                         holdings = holdings + holdings*return.today
+                         total_wealth = sum(holdings)
+                         wealthtracker[today] = total_wealth
+                       }
+                       wealthtracker
+                     }
+                     
+                     # each row is a simulated trajectory
+                     # each column is a data
+                     head(sim1)
+                     hist(sim1[,n_days], 25)
+                     
+                     # Profit/loss
+                     mean(sim1[,n_days])
+                     mean(sim1[,n_days] - initial_wealth)
+                     hist(sim1[,n_days]- initial_wealth, breaks=30)
+                     
+ # 5% value at risk:
+quantile(sim1[,n_days]- initial_wealth, prob=0.05)
+
+
+```
+
+Portfolio 3 had a VaR at the 5% level equal to approximately -8098.424, and, as previously stated, this value is conventionally stated as a positive number so we shall record it as 8098.424 . This consisted of iShares US Telecommunications ETF (IYZ), First Trust Water ETF (FIW), iShares North American Tech-Multimedia Network (IGN), SPDR S&P Telecom ETF (XTL). Essentially, this means that if this portfolio 1 has a one-day 5% VaR of approximately $8098.42, then there is a 0.05% probability that the portfolio will fall in value by more than $8098.42 over 24 hours of time if trading is not conducted. 
+
+
+# Exercise 4
+
+```{r 4.1, echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
+library(ggplot2)
+library(factoextra)
+library(LICORS)  # for kmeans++
+library(foreach)
+library(mosaic)
+
+df = read.csv('social_marketing.csv', header=TRUE)
+summary(df)
+
+sort(colSums(df[,-1]), decreasing = TRUE)
+X = df[,(2:37)] # Removed column with Twitter User ID bc kmeans wouldnt work
+
+# Normalize tweet counts to tweet frequencies
+Z = X/rowSums(X)
+
+# Distance visualization that I couldn't get to work
+distance <- get_dist(Z)
+#fviz_dist(distance, gradient = list(low = "#00AFBB", mid = "white", high = "#FC4E07"))
+
+```
+Through analyzing the data in "social_marketing.csv", several interesting insights about NutrientH20's social media audience came to light. The 5 most common tweet topics of followers are chatter, photo sharing, health nutrition, cooking, and politics. Chatter, photo sharing, and politics are common topics for many twitter users, while the prevalence of health nutrition and cooking likely indicate a more niche interest shared by NutrientH20's followers. The 5 least common tweet topics are eco, business, adult, small_business, and spam.
+
+```{r 4.2, echo=FALSE}
+# PCA
+pc2 = prcomp(Z, scale=TRUE, rank=2)
+loadings = pc2$rotation
+scores = pc2$x
+
+qplot(scores[,1], scores[,2], color = X$health_nutrition>3, xlab='Component 1', ylab='Component 2')
+```
+First, pricipal components analysis with rank=2 was run. In the above graph, Component 2 appears to split Nutrient H20's followers relatively clearly based on how often they tweet about health nutrition. Those followers represented in blue are in the top quartile for how often they tweet about health nutrition. Those followers represented in the red tweeted less often about health nutrition. Therefore, we determined that principal component two splits NutrientH20's followers based on the "Healthiness".
+
+```{r 4.3, echo=FALSE, warning=FALSE}
+qplot(scores[,1], scores[,2], color = X$food>2, xlab='Component 1', ylab='Component 2')
+
+#qplot(scores[,1], scores[,2], color = X$sports_fandom>2, xlab='Component 1', ylab='Component 2')
+```
+In the graph above, we use the "food" tag to identify 'unhealthy' followers ( those who tweet the most often about food). We can see a fairly clear divide at roughly Component 1 = 0, meaning that Component 1 seems to split the Nutrient H20's followers based on how often they tweet about food (how 'unhealthy' they are).
+
+```{r 4.4, echo=FALSE, message=FALSE, warning=FALSE}
+pc3 = prcomp(Z, scale=TRUE, rank =3)
+loadings = pc3$rotation
+scores = pc3$x
+
+qplot(scores[,1], scores[,3], color = X$politics>2, xlab='Component 1', ylab='Component 3')
+qplot(scores[,1], scores[,3], color = X$news>1, xlab='Component 1', ylab='Component 3')
+#qplot(scores[,1], scores[,3], color = X$photo_sharing>3, xlab='Component 1', ylab='Component 3')
+```
+Component 3 groups followers by how often they tweet about news/politics. There is one graph of each tag above, and visually we can see that NutrientH20's followers that are interested in news significantly overlap with those that are interested in politics. So, it is fair to say that component 3 divides NutrientH20's followers into those who are "Politically Active" and those who are not.
+
+```{r 4.5, echo=FALSE, message=FALSE, warning=FALSE}
+pc4 = prcomp(Z, scale=TRUE, rank =4)
+loadings = pc4$rotation
+scores = pc4$x
+
+qplot(scores[,3], scores[,4], color = X$college_uni>2, xlab='Component 3', ylab='Component 4')
+#qplot(scores[,3], scores[,4], color = X$outdoors>1, xlab='Component 3', ylab='Component 4')
+```
+Component 4 groups followers based on how often they tweet about "college/university", providing a separator for those followers of Nutrient H20 who we assume to be "Students". 
+
+
+Using PCA with rank = 4, it was determined that the 4 preeminent market segments for NutrientH20 are:
+
+1. Healthy (tweet most often about health nutrition, outdoors, personal fitness sports, etc.)
+2. Foodies (tweet often about food)
+3. Politically Active (tweet often about news/politics)
+4. Students (tweet often about college/university/school/travel/tv and film/sports fandom )
+
+See the following table and 4 graphs for K Means clustering visualization: 
+```{r 4.6, echo=FALSE, message=FALSE, warning=FALSE}
+# K means clustering
+clust1 = kmeans(Z, 4, nstart=25)
+clust1$centers
+
+
+# Visualization
+fviz_cluster(clust1, data = Z, labelsize=0, axes = c(1, 2))
+fviz_cluster(clust1, data = Z, labelsize=0, axes = c(3, 4))
+```
+
+```{r 4.7, echo=FALSE}
+qplot(food, health_nutrition, data=Z, color=factor(clust1$cluster))
+```
+Followers who tweeted about health nutrition less than 10% of the time were rarely groued into the "Healthy cluster" (see above).
+
+
+```{r 4.8, echo=FALSE, message=FALSE, warning=FALSE}
+qplot(personal_fitness, online_gaming, data=X, color=factor(clust1$cluster))
+```
+Clusters are split along how often they tweet about certain topics that are inherently different like personal fitness and online gaming.
+
+
+# Exercise 5
+
+```{r, echo = FALSE,warning=FALSE,include=FALSE}
+#loading Libraries
+library(tm) 
+library(magrittr)
+library(slam)
+library(proxy)
+library(caret)
+library(plyr)
+library(dplyr)
+library(ggplot2)
+library(randomForest)
+library('e1071')
+```
+
+```{r, echo = FALSE,warning=FALSE,include=FALSE}
+#Reading files and Initialization
+reader = function(fname){
+  readPlain(elem=list(content=readLines(fname)), 
+            id=fname, language='en') }
+
+```
+
+## Reading in the Folders
+```{r}
+#Reading the folders
+c50train=Sys.glob('C:/Users/mbrohnet/Documents/School Work/UT Summer/STA 380/NEW EXAM/STA380-master/data/ReutersC50/C50train/*')
+
+```
+
+## Create the training set and Clean File Names
+```{r}
+#Create training set
+authComb=NULL
+labels=NULL
+for (name in c50train)
+{ 
+  author=substring(name,first=50)
+  article=Sys.glob(paste0(name,'/*.txt'))
+  authComb=append(authComb,article)
+  labels=append(labels,rep(author,length(article)))
+}
+
+#Cleaning the file names
+reader = function(fname)
+{
+  readPlain(elem=list(content=readLines(fname)), 
+            id=fname, language='en') 
+}
+comb = lapply(authComb, reader) 
+names(comb) = authComb
+names(comb) = sub('.txt', '', names(comb))
+
+
+
+```
+
+## Pre-Processing training data by changing it to lower case, taking out numbers, taking out punctuation, taking out excess space, and taking out stop words
+```{r warning=FALSE}
+#Text mining corpus
+corpusTrain=Corpus(VectorSource(comb))
+
+#Initialization
+corpusTrainCopy=corpusTrain 
+corpusTrainCopy = tm_map(corpusTrainCopy, content_transformer(tolower)) #lower case
+corpusTrainCopy = tm_map(corpusTrainCopy, content_transformer(removeNumbers)) #take out numbers
+corpusTrainCopy = tm_map(corpusTrainCopy, content_transformer(removePunctuation)) #take out punctuation
+corpusTrainCopy = tm_map(corpusTrainCopy, content_transformer(stripWhitespace)) #take out excess space
+corpusTrainCopy = tm_map(corpusTrainCopy, content_transformer(removeWords),stopwords("en")) #take out stopwords.
+DTMc50Train = DocumentTermMatrix(corpusTrainCopy)
+DTMc50Train 
+
+#Remove sparse terms
+DTM.train=removeSparseTerms(DTMc50Train,.99)
+TfIdfMatrix = weightTfIdf(DTM.train)
+DTM.trainr=as.matrix(TfIdfMatrix) 
+```
+
+## Read in Test Data
+```{r}
+#Read in test data
+test=Sys.glob('C:/Users/mbrohnet/Documents/School Work/UT Summer/STA 380/NEW EXAM/STA380-master/data/ReutersC50/C50test/*')
+```
+
+## Cleaning File Names
+```{r}
+authComb1=NULL
+labels1=NULL
+for (name in test)
+{ 
+  author1=substring(name,first=50)
+  article1=Sys.glob(paste0(name,'/*.txt'))
+  authComb1=append(authComb1,article1)
+  labels1=append(labels1,rep(author1,length(article1)))
+}
+
+comb1 = lapply(authComb1, reader) 
+names(comb1) = authComb1
+names(comb1) = sub('.txt', '', names(comb1))
+
+
+``` 
+
+## Clean Test data in the same way the training data was cleaned 
+```{r warning = FALSE}
+corpusTest=Corpus(VectorSource(comb1))
+
+corpusTestCopy=corpusTest 
+corpusTestCopy = tm_map(corpusTestCopy, content_transformer(tolower)) #lower case
+corpusTestCopy = tm_map(corpusTestCopy, content_transformer(removeNumbers)) #take out numbers
+corpusTestCopy = tm_map(corpusTestCopy, content_transformer(removePunctuation)) #take out punctuation
+corpusTestCopy = tm_map(corpusTestCopy, content_transformer(stripWhitespace)) #take out excess space
+corpusTestCopy = tm_map(corpusTestCopy, content_transformer(removeWords),stopwords("en")) #take out stopwords
+```
+
+```{r include=FALSE}
+#Ensure train and test sets are the same
+DTM.Test=DocumentTermMatrix(corpusTestCopy,list(dictionary=colnames(DTM.train)))
+TfIdfMatrixTest = weightTfIdf(DTM.Test)
+DTM.Tests=as.matrix(TfIdfMatrixTest) 
+```
+
+## Principal component analysis was used to extract the most important features from the large data set without losing relevant data
+
+### Dimensionality Reduction
+```{r}
+#remove 0 entry columns
+DTM.trainr1=DTM.trainr[,which(colSums(DTM.trainr) != 0)] 
+DTM.tests1=DTM.Tests[,which(colSums(DTM.Tests) != 0)]
+
+#Get intersecting columns
+DTM.tests1 = DTM.tests1[,intersect(colnames(DTM.tests1),colnames(DTM.trainr1))]
+DTM.trainr1 = DTM.trainr1[,intersect(colnames(DTM.tests1),colnames(DTM.trainr1))]
+```
+
+```{r include=FALSE}
+#Get PCA
+modPCA = prcomp(DTM.trainr1,scale=TRUE)
+predictPCA=predict(modPCA,newdata = DTM.tests1)
+```
+
+### PCA was used to select the proper amount of Components
+
+```{r echo=FALSE}
+plot(modPCA,type='line') 
+var = apply(modPCA$x, 2, var)  
+prop = var / sum(var)
+plot(cumsum(modPCA$sdev^2/sum(modPCA$sdev^2)))
+```
+By reading the graph, it can be seen that the proper number of components to explain the maximum amount of data occurs at approximately 800 components.
+
+```{r include=FALSE}
+#Resetting data set to have the chosen number of PCA components
+trainC = data.frame(modPCA$x[,1:800])
+trainC['author']=labels
+trainL = modPCA$rotation[,1:800]
+testCpre = scale(DTM.tests1) %*% trainL
+testC = as.data.frame(testCpre)
+testC['author']=labels1
+```
+
+## Classification techniques to attribute the documents to its authors. Random Forest, Naive Bayes and Random Forest were utilized
+
+### --Random Forest Technique--  
+
+```{r, warning=FALSE,include=FALSE}
+set.seed(1)
+modRand=randomForest(as.factor(author)~., data=trainC, mtry=6,importance=TRUE)
+```
+
+
+### -1851 documents were properly classified by author. This equates to an accuracy of 74.04%.
+
+```{r echo=FALSE}
+predictRand=predict(modRand,data=testC)
+tabRand=as.data.frame(table(predictRand,as.factor(testC$author)))
+predicted=predictRand
+actual=as.factor(testC$author)
+temp=as.data.frame(cbind(actual,predicted))
+temp$flag=ifelse(temp$actual==temp$predicted,1,0)
+sum(temp$flag)
+sum(temp$flag)*100/nrow(temp)
+```
+
+
+### --Naive Baye's--  
+
+```{r include=FALSE}
+#model training and prediction
+modNaive=naiveBayes(as.factor(author)~.,data=trainC)
+predictNaive=predict(modNaive,testC)
+``` 
+
+### -801 documents were properly classified by author. This equates to an accuracy of 32.04%. 
+```{r echo=FALSE}
+predictedNaiveB=predictNaive
+actualNaiveB=as.factor(testC$author)
+tNaiveB=as.data.frame(cbind(actualNaiveB,predictedNaiveB))
+tNaiveB$flag=ifelse(tNaiveB$actualNaiveB==tNaiveB$predictedNaiveB,1,0)
+sum(tNaiveB$flag)
+sum(tNaiveB$flag)*100/nrow(tNaiveB)
+```
+
+```{r, warning=FALSE,echo=FALSE}
+predictNaiveTrain=predict(modNaive,trainC)
+trainErrNaive=predictNaive
+```
+
+### --K Nearest Neighbors (k=1)--
+
+```{r include=FALSE}
+#Data set prep
+c50TrainX = subset(trainC, select = -c(author))
+testX = subset(testC,select=-c(author))
+c50TrainAuthor=as.factor(trainC$author)
+testAuthor=as.factor(testC$author)
+
+```
+
+### -835 documents were properly classified by author. This equates to an accuracy of 33.4%. 
+```{r include=FALSE}
+library(class)
+set.seed(1)
+KNN.Pred=knn(c50TrainX,testX,c50TrainAuthor,k=1)
+```
+
+```{r echo=FALSE}
+temp.KNN=as.data.frame(cbind(KNN.Pred,testAuthor))
+temp.KNN.fl=ifelse(as.integer(KNN.Pred)==as.integer(testAuthor),1,0)
+sum(temp.KNN.fl)
+sum(temp.KNN.fl)*100/nrow(temp.KNN)
+```
+
+### In Summary: Of the methods tested, Random Forest provided the best accuracy, achieveing an accuracy of 74.04%. Both Naive Bayes and KNN had much lower accuracy rates, of 32.04% and 33% respectively.
+```{r echo=FALSE}
+library(ggplot2)
+compare =data.frame("Model"=c("Random Forest","Naive Baye's","KNN"), "Test.accuracy"=c(74.04,32.04,33.4))
+compare
+ggplot(compare,aes(x=Model,y=Test.accuracy))+geom_col()
+```
+
+
+# Exercise 6
+Use the data on grocery purchases in groceries.txt and find some interesting association rules for these shopping baskets. Pick your own thresholds for lift and confidence; just be clear what these thresholds are and how you picked them. Do your discovered item sets make sense? Present your discoveries in an interesting and concise way.
+
+## PART A: Read about the data set:
+```{r library, echo=FALSE}
+library (readr)
+library(caret)
+library(arules)
+```
+
+```{r data, echo=FALSE}
+groceries = read.transactions('groceryData.csv', sep=',')
+summary(groceries)
+```
+
+## Create Frequency Plot
+```{r plots, echo=FALSE}
+itemFrequencyPlot(groceries, support = 0.1)
+```
+This plot shows the most frequently purchased items from the grocery, by graphing all items witha support level greater than 0.1. 
+
+## Grocery Rules
+```{r rules, echo=FALSE}
+apriori(groceries)
+```
+
+```{r initial, echo=FALSE}
+
+groceryRules = apriori(groceries, parameter = list(support = 0.005, confidence = 0.6, minlen = 2))
+groceryRules
+```
+
+Apriori was used to create the set of grocery rules. Initially, the support was set to 0.005 and the confidence level at 0.6. The support was picked to show the rules for items that were purchased more frequently. If the item was picked 7 times per day, 7 days a week, that would result in 49/9835 ~ 0.005. Confidence interval of 0.6 was used to reduced total number of rules and find more reliable association rules.
+
+## Summary of the Created Rules
+```{r rulessum, echo=FALSE}
+#Summary of the rules
+summary(groceryRules)
+inspect(groceryRules[1:10])
+```
+This a summary of the rules, but it doesnt not show the best ones as they are ordered randomly.
+
+## Use lift to show the  best rules
+```{r topfive, echo=FALSE}
+#Shows the best five rules
+inspect(sort(groceryRules, by = 'lift')[1:5])
+```
+By ordering by lift, we can see what the best rules are sorted descending by lift. 
+
+## Milk Rules
+From the sorted rules using lift, we can see that milk is one of the most frequently bought items (which makes sense as it is the most frequently bought item), and is often paired with other frequently bought items. Below are a list of the top rules involving the purchase of milk. 
+```{r milkrules, echo=FALSE}
+gotMilkRules = subset(groceryRules, items %in% "whole milk")
+inspect(sort(gotMilkRules, by = 'lift')[1:5])
+```
+From these rules, we can see that milk was purchased most frequently with items like butter, vegetables and fruits. 
+
+## Analyze less frequently bought items
+Next we wanted to analyze the rules between items that weren't purchased as often. To this, we decreased the support level to 0.0015 reflect less purchased items, and increased the confidence level to filter out the bad rules, as more rules would be created using a lower support level. 
+
+```{r newrules, echo=FALSE}
+#Confidence interval of 0.4 was used to reduced total number of rules and find more reliable association rules
+groceryRules = apriori(groceries, parameter = list(support = 0.0015, confidence = 0.8, minlen = 2))
+groceryRules
+```
+
+## Inspect Rules for Less Frequently Purchased Items
+```{r confidentrules, echo=FALSE}
+#Shows the best five rules
+inspect(sort(groceryRules, by = 'lift')[1:5])
+```
+From these rules, some interesting associations appear. The best rule found showed that beer was often purchased with wine or liquor, which makes sense as if someone is purchasing alcohol for a party or for themselves, it make sense they would try to bring a variety. In addition, it was found that other vegetables were frequently bought with other items, even if it was as commonly bought in bulk like whole milk was. 
